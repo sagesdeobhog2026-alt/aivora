@@ -205,7 +205,7 @@ async function initDatabase() {
     }
   }
 
-  const configuredGroup = String(process.env.WHATSAPP_GROUP_URL || '').trim();
+  const configuredGroup = String(process.env.WHATSAPP_GROUP_URL || 'https://chat.whatsapp.com/JLxeBtiSAkkIeIfIGJJjuh').trim();
   if (configuredGroup && validWhatsAppGroupUrl(configuredGroup)) {
     await db.query(
       `INSERT INTO site_settings(setting_key, setting_value) VALUES('whatsapp_group_url', $1)
@@ -539,6 +539,8 @@ app.post('/api/admin/students/:id/access', requireDatabase, requireAdmin, async 
 });
 
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'admin.html')));
+app.get('/support', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'support.html')));
+app.get('/enroll', (req, res) => res.redirect(302, '/#course'));
 app.get('/student', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'student.html')));
 
 initDatabase().then(() => {
