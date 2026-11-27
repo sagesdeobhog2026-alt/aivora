@@ -1,9 +1,20 @@
 {
   "name": "aivora-ebook-store",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "AIVORA AI creator ebook storefront with Razorpay checkout scaffold",
+  "description": "AIVORA storefront with PostgreSQL-backed payments and admin portal",
   "main": "server/index.js",
-  "scripts": {"start": "node server/index.js", "dev": "node --watch server/index.js"},
-  "dependencies": {"dotenv": "^16.4.7", "express": "^4.21.2", "razorpay": "^2.9.6"}
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1",
+    "razorpay": "^2.9.6"
+  }
 }

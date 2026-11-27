@@ -1,23 +1,28 @@
-# AIVORA storefront — first version
+# AIVORA — latest Reel-format storefront + first Admin Portal
 
-A responsive one-page storefront for the ₹199 AIVORA AI Creator e-book.
+This merged package keeps the latest Reel-format public website from `AIVORA-website-v3-reel-format` and adds the PostgreSQL-backed Admin Portal from `aivora-admin-portal-v1`. The public gallery in this package retains its 14 images and 6 videos.
 
-## Run locally
-1. Install Node.js 18+.
-2. In this folder run `npm install`.
-3. Copy `.env.example` to `.env` and add Razorpay **test** API credentials.
-4. Put the final PDF at `private/ebook.pdf` (create the `private` folder; do not put the paid PDF in `public`).
-5. Run `npm start` and open http://localhost:3000.
+## Included
+- Latest Reel-format public website (`public/index.html`)
+- Original `public/media/` assets from the latest v3 upload
+- Admin login page at `/admin` (`public/admin.html`)
+- PostgreSQL tables for admins and orders, created automatically at startup
+- First-admin bootstrap using `ADMIN_EMAIL` and `ADMIN_PASSWORD`
+- Order/payment dashboard with total orders, paid orders, revenue and latest 100 orders
+- Razorpay order creation, server-side signature/payment verification and paid e-book download token
 
-## Before accepting real payments
-- Replace test keys with live Razorpay keys in the hosting provider's secret environment settings. Never put the key secret in frontend code or share it in chat.
-- Configure HTTPS and a persistent order/payment store. This starter uses in-memory paid-order storage, which resets on restart and is not suitable for production. For production, persist orders in a database and validate payment status with Razorpay's API/webhooks before issuing downloads.
-- Add your real videos to the gallery and replace the sample placeholder tiles in `public/index.html` with `<video controls playsinline>` elements pointing to your hosted MP4 files.
-- Upload your final e-book to `private/ebook.pdf` and test the complete flow using Razorpay test mode.
-- Add contact details, privacy policy, terms, refund/cancellation policy and product-specific descriptions.
+## Render deployment
+1. Extract this ZIP. Copy the **contents** of the extracted folder into the existing GitHub repository folder, allowing files to be replaced. Do not delete or replace the repository's hidden `.git` folder. This preserves GitHub Desktop tracking.
+2. Confirm Render's Build Command is `npm install` and Start Command is `npm start`.
+3. In the Render Environment Group linked to the web service, set `DATABASE_URL` to the PostgreSQL database's **Internal Database URL**. Keep the existing value if it is already correct.
+4. Set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_JWT_SECRET` to your chosen values. Use a unique strong password and a long random secret. Do not put secrets in GitHub or share them in chat.
+5. Set `DATABASE_SSL=true` and `NODE_ENV=production` in Render. Keep Razorpay credentials in Render only; use test credentials for testing.
+6. Commit and push the updated repository in GitHub Desktop. Render can deploy automatically if auto-deploy is enabled.
+7. After deployment, open `/api/health`; expect `{"ok":true,"database":"connected"}`. Then open `/admin` and sign in with the configured admin credentials.
 
-## Hosting
-Deploy this Node/Express project to a Node-compatible host (for example Render or Railway) and use its free subdomain if available on your selected plan. Set environment variables in the host dashboard. Free-tier terms and availability can change.
-
-## Important
-This is a first-version starter, not a live store yet. Checkout remains disabled until valid Razorpay credentials are configured. The download endpoint is a starter implementation; upgrade order persistence, webhook reconciliation and rate limiting before production use.
+## Important notes
+- The first admin account is inserted only if `ADMIN_EMAIL` does not already exist in the database. Changing `ADMIN_PASSWORD` later in Render does **not** reset an existing database password.
+- The admin dashboard currently shows **orders and payment records**, not separate student accounts. Student registration, student login, verified-student-only WhatsApp group access, and live class access are future additions.
+- `WHATSAPP_GROUP_URL` is reserved and is not exposed by this version.
+- The paid PDF must be stored at `private/ebook.pdf`, outside `public/`.
+- The portal's first version is not a complete production commerce system: webhook reconciliation, login rate limiting, password reset, audit logging and student management are not yet included. Test with Razorpay test credentials before accepting live payments.

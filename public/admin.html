@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIVORA Admin</title><style>
+:root{color-scheme:dark;--bg:#08090f;--panel:#11131e;--line:#292c40;--muted:#a5a8ba;--purple:#9b75ff;--cyan:#73e5e1}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#21183b 0,transparent 35%),var(--bg);color:#f7f7fb;font:15px Inter,system-ui,sans-serif}
+.wrap{width:min(1100px,calc(100% - 32px));margin:42px auto}.brand{font-size:22px;font-weight:900;letter-spacing:4px}.brand span{color:var(--purple)}
+.panel{background:#11131eeF;border:1px solid var(--line);border-radius:18px;padding:24px;margin-top:24px}.login{max-width:430px;margin:70px auto}
+label{display:block;color:var(--muted);font-size:13px;margin:16px 0 7px}input{width:100%;padding:13px;border-radius:9px;border:1px solid var(--line);background:#090b13;color:white}
+button{border:0;border-radius:9px;padding:12px 18px;background:linear-gradient(110deg,#9c75ff,#6d69ff);color:white;font-weight:800;cursor:pointer}
+.muted{color:var(--muted)}.error{color:#ff9caa;min-height:22px}.hidden{display:none}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.stat{background:#090b13;border:1px solid var(--line);border-radius:12px;padding:18px}.stat b{display:block;font-size:28px;margin-top:8px}
+.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:720px}th,td{text-align:left;padding:13px;border-bottom:1px solid var(--line);font-size:13px}th{color:var(--muted)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}.status{color:var(--cyan);text-transform:capitalize}
+@media(max-width:650px){.cards{grid-template-columns:1fr}.wrap{margin:24px auto}.panel{padding:17px}}
+</style></head><body><main class="wrap">
+<div class="brand">AI<span>VORA</span> <small class="muted" style="font-size:12px;letter-spacing:1px">ADMIN</small></div>
+<section id="login" class="panel login"><h2>Admin Login</h2><p class="muted">Sign in to manage AIVORA orders and payments.</p>
+<form id="loginForm"><label>Email</label><input id="email" type="email" autocomplete="username" required><label>Password</label><input id="password" type="password" autocomplete="current-password" required><p id="loginError" class="error"></p><button type="submit">Sign in</button></form></section>
+<section id="dashboard" class="hidden"><div class="top" style="margin-top:30px"><div><h1 style="margin-bottom:5px">Dashboard</h1><div id="adminEmail" class="muted"></div></div><button id="logout">Log out</button></div>
+<div class="cards" style="margin-top:22px"><div class="stat"><span class="muted">Total orders</span><b id="totalOrders">0</b></div><div class="stat"><span class="muted">Paid orders</span><b id="paidOrders">0</b></div><div class="stat"><span class="muted">Revenue</span><b id="revenue">₹0</b></div></div>
+<div class="panel"><div class="top"><h2>Recent orders & payments</h2><button id="refresh">Refresh</button></div><p class="muted">Customer email and phone appear when Razorpay provides them. This table shows the latest 100 orders; student accounts are a separate future feature.</p><div class="tablewrap"><table><thead><tr><th>Date</th><th>Customer email</th><th>Phone</th><th>Amount</th><th>Status</th><th>Payment ID</th></tr></thead><tbody id="orders"></tbody></table></div></div></section>
+</main><script>
+const $=id=>document.getElementById(id);
+async function api(url,options={}){const r=await fetch(url,{credentials:'same-origin',headers:{'Content-Type':'application/json',...(options.headers||{})},...options});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Request failed');return d}
+function showLogin(){$('login').classList.remove('hidden');$('dashboard').classList.add('hidden')}
+function showDashboard(){$('login').classList.add('hidden');$('dashboard').classList.remove('hidden')}
+function money(n){return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(Number(n||0)/100)}
+function escapeHtml(value){return String(value??'').replace(/[&<>\"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[ch]))}
+async function loadDashboard(){const d=await api('/api/admin/dashboard');$('totalOrders').textContent=d.stats.total_orders;$('paidOrders').textContent=d.stats.paid_orders;$('revenue').textContent=money(d.stats.revenue);$('orders').innerHTML=d.orders.map(o=>`<tr><td>${escapeHtml(new Date(o.created_at).toLocaleString())}</td><td>${escapeHtml(o.customer_email||'—')}</td><td>${escapeHtml(o.customer_phone||'—')}</td><td>${money(o.amount)}</td><td class="status">${escapeHtml(o.status)}</td><td>${escapeHtml(o.razorpay_payment_id||'—')}</td></tr>`).join('')||'<tr><td colspan="6">No orders yet.</td></tr>'}
+async function checkSession(){try{const d=await api('/api/admin/me');$('adminEmail').textContent=d.email;showDashboard();await loadDashboard()}catch{showLogin()}}
+$('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginError').textContent='';try{const d=await api('/api/admin/login',{method:'POST',body:JSON.stringify({email:$('email').value,password:$('password').value})});$('adminEmail').textContent=d.email;showDashboard();await loadDashboard()}catch(err){$('loginError').textContent=err.message}});
+$('logout').addEventListener('click',async()=>{await api('/api/admin/logout',{method:'POST'});showLogin()});
+$('refresh').addEventListener('click',()=>loadDashboard().catch(e=>alert(e.message)));
+checkSession();
+</script></body></html>
