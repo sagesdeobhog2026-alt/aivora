@@ -1,28 +1,81 @@
-# AIVORA — latest Reel-format storefront + first Admin Portal
+# AIVORA — AI Video Creation with Free Tools (₹99 Course)
 
-This merged package keeps the latest Reel-format public website from `AIVORA-website-v3-reel-format` and adds the PostgreSQL-backed Admin Portal from `aivora-admin-portal-v1`. The public gallery in this package retains its 14 images and 6 videos.
+This project keeps the AIVORA Reel-format public website and its existing 14 portrait images and 6 preview videos, and adds a paid-student course enrolment system with a PostgreSQL-backed Admin Portal.
 
-## Included
-- Latest Reel-format public website (`public/index.html`)
-- Original `public/media/` assets from the latest v3 upload
-- Admin login page at `/admin` (`public/admin.html`)
-- PostgreSQL tables for admins and orders, created automatically at startup
-- First-admin bootstrap using `ADMIN_EMAIL` and `ADMIN_PASSWORD`
-- Order/payment dashboard with total orders, paid orders, revenue and latest 100 orders
-- Razorpay order creation, server-side signature/payment verification and paid e-book download token
+## Features included
 
-## Render deployment
-1. Extract this ZIP. Copy the **contents** of the extracted folder into the existing GitHub repository folder, allowing files to be replaced. Do not delete or replace the repository's hidden `.git` folder. This preserves GitHub Desktop tracking.
-2. Confirm Render's Build Command is `npm install` and Start Command is `npm start`.
-3. In the Render Environment Group linked to the web service, set `DATABASE_URL` to the PostgreSQL database's **Internal Database URL**. Keep the existing value if it is already correct.
-4. Set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_JWT_SECRET` to your chosen values. Use a unique strong password and a long random secret. Do not put secrets in GitHub or share them in chat.
-5. Set `DATABASE_SSL=true` and `NODE_ENV=production` in Render. Keep Razorpay credentials in Render only; use test credentials for testing.
-6. Commit and push the updated repository in GitHub Desktop. Render can deploy automatically if auto-deploy is enabled.
-7. After deployment, open `/api/health`; expect `{"ok":true,"database":"connected"}`. Then open `/admin` and sign in with the configured admin credentials.
+- Existing public AIVORA gallery with 14 images and 6 videos.
+- **One-video-at-a-time playback**: starting a preview video pauses every other preview video.
+- Course landing page for **AI Video Creation with Free Tools**, priced at **₹99 one-time**.
+- Student enrolment form captures name, email, mobile number and a student-created password before checkout.
+- Razorpay order creation for ₹99 and server-side signature plus payment-state verification.
+- Student account stays `pending` until payment is captured and verified; only then is it activated.
+- Student login and private Student Dashboard at `/student`.
+- The WhatsApp group invite URL is returned only to an authenticated student whose database access status is `active`.
+- Admin Portal at `/admin` with course order and revenue summary, student list, student activation/suspension, and WhatsApp group link management.
+- Razorpay `payment.captured` webhook endpoint at `/api/razorpay/webhook` for payment reconciliation if the browser closes after paying.
+- Live-class updates and meeting links are intended to be shared inside the private WhatsApp group. **Zoom integration is not enabled in this version**, as previously decided.
+- Existing database is migrated safely at startup with `CREATE TABLE IF NOT EXISTS` and `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`; existing e-book order rows are retained and labelled `ebook` by default.
 
-## Important notes
-- The first admin account is inserted only if `ADMIN_EMAIL` does not already exist in the database. Changing `ADMIN_PASSWORD` later in Render does **not** reset an existing database password.
-- The admin dashboard currently shows **orders and payment records**, not separate student accounts. Student registration, student login, verified-student-only WhatsApp group access, and live class access are future additions.
-- `WHATSAPP_GROUP_URL` is reserved and is not exposed by this version.
-- The paid PDF must be stored at `private/ebook.pdf`, outside `public/`.
-- The portal's first version is not a complete production commerce system: webhook reconciliation, login rate limiting, password reset, audit logging and student management are not yet included. Test with Razorpay test credentials before accepting live payments.
+## Local project setup
+
+1. Use Node.js 18 or newer.
+2. Install packages: `npm install`.
+3. Copy `.env.example` to `.env` and enter local development values. Never commit `.env`.
+4. Start with `npm start` (or `npm run dev`).
+5. PostgreSQL is required for student and admin features.
+
+## Render configuration
+
+Keep the existing Render PostgreSQL Internal Database URL in `DATABASE_URL`. Configure these variables in the Render Environment Group (never in GitHub):
+
+- `NODE_ENV=production`
+- `DATABASE_SSL=true`
+- `DATABASE_URL=<Render PostgreSQL Internal Database URL>`
+- `ADMIN_EMAIL=<existing admin email>`
+- `ADMIN_PASSWORD=<existing admin password>`
+- `ADMIN_JWT_SECRET=<long random secret>`
+- `STUDENT_JWT_SECRET=<different long random secret>` (recommended; otherwise the server falls back to `ADMIN_JWT_SECRET`)
+- `RAZORPAY_KEY_ID=<Razorpay key ID>`
+- `RAZORPAY_KEY_SECRET=<Razorpay key secret>`
+- `RAZORPAY_WEBHOOK_SECRET=<webhook secret>` (recommended for automatic webhook reconciliation)
+
+The admin account that already exists in the current database is retained. Changing `ADMIN_PASSWORD` in Render does not reset the password hash for an existing admin. Do not rotate the admin password/secret during this deployment unless you have a separate reset plan.
+
+Render service commands:
+
+- Build Command: `npm install`
+- Start Command: `npm start`
+
+## Razorpay webhook setup
+
+After deploying, configure a webhook in Razorpay with this URL:
+
+`https://YOUR-RENDER-SERVICE.onrender.com/api/razorpay/webhook`
+
+Subscribe to the `payment.captured` event and paste the generated webhook secret into Render as `RAZORPAY_WEBHOOK_SECRET`. The normal checkout callback also verifies the payment server-side; the webhook covers cases where the customer closes the browser after payment.
+
+**Live payment caution:** A live Razorpay checkout can charge real money. Use test credentials in test mode where available. Do not run a live ₹99 payment unless you intend to make that purchase.
+
+## WhatsApp group link
+
+1. Sign in to `/admin` using the existing admin account.
+2. In **Private WhatsApp Group**, paste the invite URL in the form `https://chat.whatsapp.com/...` and save it.
+3. The admin dashboard can view/update the link. Public visitors and pending/suspended students do not receive it.
+4. Only a student with an active, verified course payment can sign in at `/student` and receive the group link from the authenticated student API.
+
+If `WHATSAPP_GROUP_URL` is set in Render before the first startup, it is imported as the initial fallback setting. You can also manage the link inside Admin Portal.
+
+## URLs and checks
+
+- Public website: `/`
+- Admin Portal: `/admin`
+- Student Login / Dashboard: `/student`
+- Health check: `/api/health` (expect `{"ok":true,"database":"connected"}`)
+
+## Important scope notes
+
+- The six MP4 files in `public/media` are public showcase/preview clips, not private paid course lesson videos. They remain public on the marketing page.
+- The Student Dashboard protects paid-student account and WhatsApp access. Course lesson videos/materials must be supplied separately before they can be placed in the student learning area.
+- Live class meeting URLs are not embedded in the site. They are to be shared by the course operator inside the private WhatsApp group; Zoom integration remains intentionally skipped for now.
+- Payment verification relies on the Razorpay API credentials and captured-payment status. Configure and test the correct Razorpay key pair before taking real enrolments.
